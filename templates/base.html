@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}CivicRoute AI – Departmental Grievance Management (GOV-21){% endblock %}</title>
+  <meta name="description" content="GOV-21: Department-based government citizen grievance redressal prototype with SLA tracking, automatic escalations, and official @gov.in administration.">
+  
+  <!-- Modern Font & Styles -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  
+  <!-- Chart.js for Admin Analytics -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+
+  <!-- Top Navigation Header -->
+  <header class="app-header">
+    <div class="header-container">
+      <div class="brand-wrapper">
+        <div class="brand-icon">🏛️</div>
+        <a href="{{ url_for('index') }}">
+          <div class="brand-name">CivicRoute <span style="color:#38bdf8; font-weight:800;">GOV-21</span></div>
+        </a>
+        {% if user_role == 'admin' and admin_profile %}
+          <span class="brand-badge" style="background:rgba(59, 130, 246, 0.2); color:#93c5fd; border-color:rgba(59, 130, 246, 0.4);">
+            {{ admin_profile.shortDept }}
+          </span>
+        {% else %}
+          <span class="brand-badge">CITIZEN PORTAL</span>
+        {% endif %}
+      </div>
+
+      <!-- Navigation Links -->
+      <nav>
+        <ul class="nav-links">
+          {% if user_role == 'admin' and admin_profile %}
+            <li class="nav-item {% if request.endpoint == 'admin_dashboard' %}active{% endif %}">
+              <a href="{{ url_for('admin_dashboard') }}">📊 Dept Dashboard</a>
+            </li>
+            <li class="nav-item {% if request.endpoint == 'admin_complaints' %}active{% endif %}">
+              <a href="{{ url_for('admin_complaints') }}">📋 Dept Complaints</a>
+            </li>
+            <li class="nav-item {% if request.endpoint == 'admin_hotspots' %}active{% endif %}">
+              <a href="{{ url_for('admin_hotspots') }}">📍 Dept Hotspots</a>
+            </li>
+          {% else %}
+            <li class="nav-item {% if request.endpoint == 'index' %}active{% endif %}">
+              <a href="{{ url_for('index') }}">Home</a>
+            </li>
+            <li class="nav-item {% if request.endpoint == 'submit_complaint' %}active{% endif %}">
+              <a href="{{ url_for('submit_complaint') }}">✍️ Submit Complaint</a>
+            </li>
+            <li class="nav-item {% if request.endpoint == 'my_complaints' %}active{% endif %}">
+              <a href="{{ url_for('my_complaints') }}">📑 My Complaints</a>
+            </li>
+            <li class="nav-item {% if request.endpoint == 'notifications_view' %}active{% endif %}">
+              <a href="{{ url_for('notifications_view') }}">
+                🔔 Notifications
+                {% if unread_notifications_count > 0 %}
+                  <span class="nav-badge">{{ unread_notifications_count }}</span>
+                {% endif %}
+              </a>
+            </li>
+            <li class="nav-item {% if request.endpoint == 'profile' %}active{% endif %}">
+              <a href="{{ url_for('profile') }}">👤 Profile</a>
+            </li>
+          {% endif %}
+        </ul>
+      </nav>
+
+      <!-- Header Actions: User Profile / Department Quick Switcher -->
+      <div class="header-actions">
+        
+        {% if user_role == 'admin' and admin_profile %}
+          <!-- Department Quick Switcher for Hackathon Demo -->
+          <div style="position: relative; display: inline-block;">
+            <select onchange="window.location.href=this.value" class="form-select" style="padding: 0.3rem 0.65rem; font-size: 0.78rem; background: rgba(30, 41, 59, 0.9); border-color: rgba(59, 130, 246, 0.4); color: #93c5fd; border-radius: 9999px;">
+              <option value="" disabled>Switch Department...</option>
+              {% for em, meta in admin_dept_mapping.items() %}
+                <option value="{{ url_for('switch_admin', email=em) }}" {% if admin_profile.email == em %}selected{% endif %}>
+                  {{ meta.shortDept }} ({{ em }})
+                </option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <a href="{{ url_for('switch_to_citizen') }}" class="btn btn-secondary btn-sm" style="font-size:0.75rem; padding: 0.35rem 0.65rem;" title="Switch to Citizen View">
+            👤 Citizen View
+          </a>
+
+          <div class="user-pill" title="Logged in as Government Officer">
+            <span style="font-size: 0.82rem; font-family: monospace; font-weight: 700; color: #93c5fd;">
+              {{ admin_profile.email }}
+            </span>
+          </div>
+
+          <a href="{{ url_for('logout') }}" class="btn btn-secondary btn-sm" style="padding:0.35rem 0.65rem; color:#fda4af;" title="Sign Out">
+            Sign Out
+          </a>
+        {% else %}
+          <div class="role-switcher">
+            <a href="{{ url_for('switch_to_citizen') }}" class="role-btn active">
+              Citizen View
+            </a>
+            <a href="{{ url_for('admin_login_page') }}" class="role-btn">
+              Officer Login (@gov.in)
+            </a>
+          </div>
+
+          <a href="{{ url_for('profile') }}" class="user-pill">
+            <img src="{{ current_user.avatar }}" alt="{{ current_user.name }}" class="user-avatar">
+            <span style="font-size:0.82rem; font-weight:600; color:var(--text-primary);">{{ current_user.name.split(' ')[0] }}</span>
+          </a>
+
+          <a href="{{ url_for('login_page') }}" class="btn btn-secondary btn-sm" style="padding:0.35rem 0.65rem;">
+            Sign In
+          </a>
+        {% endif %}
+
+      </div>
+    </div>
+  </header>
+
+  <!-- Flash Messages & Global AI Disclaimer Notice -->
+  <main class="main-wrapper">
+    
+    <!-- AI Disclaimer Badge Required by Project Specification -->
+    <div class="ai-disclaimer-card">
+      <span class="ai-pill">AI ASSISTED</span>
+      <span>AI predictions (department routing, categories, and priority scores) are recommendations to assist triage, not official government decisions.</span>
+    </div>
+
+    <!-- Alert Banners -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="alert-container">
+          {% for category, message in messages %}
+            <div class="alert-banner alert-{{ category }}">
+              <span>{{ message }}</span>
+              <button onclick="this.parentElement.remove()" style="background:none; border:none; color:inherit; cursor:pointer;">&times;</button>
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <!-- Page Content Block -->
+    {% block content %}{% endblock %}
+
+  </main>
+
+  <!-- Global Toast Notifications Container -->
+  <div id="toast-container"></div>
+
+  <!-- Footer -->
+  <footer class="app-footer">
+    <div class="footer-content">
+      <div>
+        <strong>CivicRoute GOV-21</strong> – Department-Based Government Grievance Management Prototype
+      </div>
+      <div>
+        <span>12 Official Department Mappings &bull; Priority SLA Deadlines (3d / 7d / 15d) &bull; Daily Limit: 5</span>
+      </div>
+      <div style="font-size: 0.78rem;">
+        Official Government Email Format (@gov.in) &bull; Automatic Escalation &bull; Evidence-Based Resolution
+      </div>
+    </div>
+  </footer>
+
+  <!-- Main Client Scripts -->
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+  {% block extra_scripts %}{% endblock %}
+</body>
+</html>

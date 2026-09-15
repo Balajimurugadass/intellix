@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+
+{% block title %}Hotspots & Geographic Clusters – CivicRoute AI{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 2.5rem;">
+
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+    <div>
+      <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
+        <span class="badge" style="background: rgba(244, 63, 94, 0.2); color: #fda4af;">SPATIAL INTELLIGENCE</span>
+      </div>
+      <h1 style="font-size: 2rem; font-weight: 800; letter-spacing: -0.02em;">Geographic Hotspot Surveillance</h1>
+      <p style="color: var(--text-secondary); font-size: 0.95rem;">
+        Clustering complaint coordinates across municipal wards to isolate localized infrastructure breakdowns.
+      </p>
+    </div>
+
+    <a href="{{ url_for('admin_dashboard') }}" class="btn btn-secondary">
+      &larr; Executive Dashboard
+    </a>
+  </div>
+
+  <!-- Interactive Map Simulation Card -->
+  <div class="civic-card" style="margin-bottom: 2rem; padding: 0; overflow: hidden;">
+    <div style="padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center; background: rgba(15, 23, 42, 0.8);">
+      <div style="display:flex; align-items:center; gap:0.6rem;">
+        <span style="font-size: 1.2rem;">🗺️</span>
+        <strong style="font-size: 1rem; color: #f8fafc;">Municipal Ward GIS Density Grid</strong>
+      </div>
+      <span style="font-size: 0.8rem; color: var(--text-muted);">
+        Simulated Map Surface (Phase 10 connects Google Maps Platform API)
+      </span>
+    </div>
+
+    <!-- Map Canvas Simulation with Hotspot Points -->
+    <div style="height: 340px; background: #080d1a; position: relative; display: flex; align-items: center; justify-content: center; background-image: radial-gradient(rgba(56, 189, 248, 0.15) 1px, transparent 0); background-size: 24px 24px;">
+      
+      <!-- Cluster 1: Water Supply (Critical) -->
+      <div style="position: absolute; top: 38%; left: 35%; transform: translate(-50%, -50%); text-align: center; cursor: pointer;" title="Water Supply Hotspot - 37 complaints">
+        <div style="width: 70px; height: 70px; background: rgba(244, 63, 94, 0.25); border: 2px solid #f43f5e; border-radius: 50%; display: flex; align-items: center; justify-content: center; animation: pulseGlow 1.8s infinite;">
+          <div style="width: 44px; height: 44px; background: #f43f5e; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; font-weight: 800; font-size: 0.9rem; box-shadow: 0 0 15px rgba(244, 63, 94, 0.6);">
+            37
+            <span style="font-size: 0.55rem; font-weight: 600; text-transform: uppercase;">Water</span>
+          </div>
+        </div>
+        <div style="margin-top: 6px; background: rgba(15,23,42,0.9); padding: 2px 8px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.1); font-size: 0.72rem; color: #fca5a5; font-weight: 700;">
+          Sector 2, Anna Nagar
+        </div>
+      </div>
+
+      <!-- Cluster 2: Roads (High) -->
+      <div style="position: absolute; top: 60%; left: 62%; transform: translate(-50%, -50%); text-align: center; cursor: pointer;" title="Roads Hotspot - 24 complaints">
+        <div style="width: 58px; height: 58px; background: rgba(245, 158, 11, 0.2); border: 2px solid #f59e0b; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+          <div style="width: 36px; height: 36px; background: #f59e0b; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; font-weight: 800; font-size: 0.85rem;">
+            24
+            <span style="font-size: 0.5rem; font-weight: 600; text-transform: uppercase;">Roads</span>
+          </div>
+        </div>
+        <div style="margin-top: 6px; background: rgba(15,23,42,0.9); padding: 2px 8px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.1); font-size: 0.72rem; color: #fde68a; font-weight: 700;">
+          Anna Salai Junction
+        </div>
+      </div>
+
+      <!-- Cluster 3: Sanitation (Medium) -->
+      <div style="position: absolute; top: 25%; left: 75%; transform: translate(-50%, -50%); text-align: center; cursor: pointer;" title="Sanitation Hotspot - 18 complaints">
+        <div style="width: 48px; height: 48px; background: rgba(16, 185, 129, 0.2); border: 2px solid #10b981; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+          <div style="width: 30px; height: 30px; background: #10b981; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; font-weight: 800; font-size: 0.78rem;">
+            18
+            <span style="font-size: 0.45rem; font-weight: 600; text-transform: uppercase;">Waste</span>
+          </div>
+        </div>
+        <div style="margin-top: 6px; background: rgba(15,23,42,0.9); padding: 2px 8px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.1); font-size: 0.72rem; color: #a7f3d0; font-weight: 700;">
+          Market Square
+        </div>
+      </div>
+
+      <div style="position: absolute; bottom: 12px; left: 16px; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(8px); padding: 6px 12px; border-radius: 6px; border: 1px solid var(--border-subtle); font-size: 0.75rem; color: var(--text-secondary);">
+        🟢 Low Density &bull; 🟡 Moderate Density &bull; 🔴 High Density Hotspot
+      </div>
+    </div>
+  </div>
+
+  <!-- Detected Hotspot Cards -->
+  <div style="margin-bottom: 2rem;">
+    <h3 style="font-size: 1.15rem; font-weight: 700; margin-bottom: 1rem;">Active Municipal Hotspots ({{ hotspots|length }})</h3>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.25rem;">
+      {% for h in hotspots %}
+        <div class="civic-card" style="border-top: 3px solid {% if h.severity == 'CRITICAL' %}#f43f5e{% elif h.severity == 'HIGH' %}#f59e0b{% else %}#10b981{% endif %};">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+            <span class="badge" style="background: rgba(255,255,255,0.06); color: #f8fafc;">{{ h.category }}</span>
+            <span class="badge priority-{{ 'HIGH' if h.severity in ['CRITICAL', 'HIGH'] else 'MEDIUM' }}">
+              {{ h.severity }} SEVERITY
+            </span>
+          </div>
+
+          <h4 style="font-size: 1.1rem; font-weight: 700; color: #f8fafc; margin-bottom: 0.25rem;">
+            {{ h.category }} Hotspot — {{ h.complaintCount }} complaints
+          </h4>
+          <div style="font-size: 0.82rem; color: #38bdf8; margin-bottom: 0.5rem;">
+            📍 {{ h.locationName }}
+          </div>
+
+          <p style="font-size: 0.86rem; color: var(--text-secondary); line-height: 1.5; margin-bottom: 0.75rem;">
+            {{ h.description }}
+          </p>
+
+          <div style="font-size: 0.78rem; color: #fde68a; background: rgba(245, 158, 11, 0.08); padding: 4px 8px; border-radius: 4px; display: inline-block;">
+            📈 Trend: {{ h.trend }}
+          </div>
+
+          <div style="margin-top: 1rem; padding-top: 0.75rem; border-top: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 0.78rem; color: var(--text-muted);">Assigned: {{ h.department }}</span>
+            <a href="{{ url_for('admin_complaints', category=h.category) }}" class="btn btn-secondary btn-sm" style="font-size:0.75rem; padding: 3px 8px;">
+              View Tickets &rarr;
+            </a>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+
+</div>
+{% endblock %}

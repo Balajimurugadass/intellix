@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% block title %}Citizen Profile – CivicRoute AI{% endblock %}
+
+{% block content %}
+<div style="max-width: 750px; margin: 0 auto;">
+  
+  <div style="margin-bottom: 2rem;">
+    <h1 style="font-size: 1.85rem; font-weight: 800; letter-spacing: -0.02em;">Citizen Profile</h1>
+    <p style="color: var(--text-secondary); font-size: 0.95rem;">Manage your contact details, preferred language, and default municipal ward.</p>
+  </div>
+
+  <div class="civic-card">
+    
+    <!-- User Header Card -->
+    <div style="display: flex; align-items: center; gap: 1.25rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--border-subtle); margin-bottom: 1.75rem;">
+      <img src="{{ user.avatar }}" alt="{{ user.name }}" style="width: 72px; height: 72px; border-radius: 50%; object-fit: cover; border: 2px solid #38bdf8;">
+      <div>
+        <h2 style="font-size: 1.3rem; font-weight: 700;">{{ user.name }}</h2>
+        <div style="font-size: 0.85rem; color: var(--text-secondary); font-family: monospace;">UID: {{ user.uid }}</div>
+        <div style="margin-top: 0.4rem;">
+          <span class="badge" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8;">Verified Citizen Account</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Edit Profile Form -->
+    <form method="POST" action="{{ url_for('profile') }}">
+      
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem;">
+        <div class="form-group">
+          <label class="form-label" for="name">Full Name <span class="req">*</span></label>
+          <input type="text" id="name" name="name" class="form-input" value="{{ user.name }}" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="email">Email Address (from Google OAuth)</label>
+          <input type="email" id="email" class="form-input" value="{{ user.email }}" disabled style="opacity: 0.6; cursor: not-allowed;">
+          <div class="form-help">Linked via Google Sign-In</div>
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem;">
+        <div class="form-group">
+          <label class="form-label" for="phone">Phone Number <span class="req">*</span></label>
+          <input type="tel" id="phone" name="phone" class="form-input" value="{{ user.phone }}" required>
+          <div class="form-help">Used for municipal resolution notifications</div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="preferredLanguage">Preferred Language</label>
+          <select id="preferredLanguage" name="preferredLanguage" class="form-select">
+            <option value="English" {% if user.preferredLanguage == 'English' %}selected{% endif %}>English</option>
+            <option value="Tamil" {% if user.preferredLanguage == 'Tamil' %}selected{% endif %}>Tamil (தமிழ்)</option>
+            <option value="Hindi" {% if user.preferredLanguage == 'Hindi' %}selected{% endif %}>Hindi (हिन्दी)</option>
+            <option value="Telugu" {% if user.preferredLanguage == 'Telugu' %}selected{% endif %}>Telugu (తెలుగు)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="defaultLocation">Default Municipal Ward / Locality</label>
+        <input type="text" id="defaultLocation" name="defaultLocation" class="form-input" value="{{ user.defaultLocation }}">
+        <div class="form-help">Default location auto-fills when filing new grievances</div>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 1rem; margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border-subtle);">
+        <a href="{{ url_for('my_complaints') }}" class="btn btn-secondary">Cancel</a>
+        <button type="submit" class="btn btn-primary">Save Profile Changes</button>
+      </div>
+
+    </form>
+  </div>
+</div>
+{% endblock %}

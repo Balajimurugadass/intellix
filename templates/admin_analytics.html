@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+
+{% block title %}Emerging Issues & Anomaly Analytics – CivicRoute AI{% endblock %}
+
+{% block content %}
+<div style="max-width: 960px; margin: 0 auto 3rem;">
+
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+    <div>
+      <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
+        <span class="badge" style="background: rgba(245, 158, 11, 0.2); color: #fde68a;">ANALYTICAL TELEMETRY</span>
+      </div>
+      <h1 style="font-size: 2rem; font-weight: 800; letter-spacing: -0.02em;">Emerging Municipal Anomaly Detection</h1>
+      <p style="color: var(--text-secondary); font-size: 0.95rem;">
+        Period-over-period comparative analysis highlighting sudden complaint spikes across municipal sectors.
+      </p>
+    </div>
+
+    <a href="{{ url_for('admin_dashboard') }}" class="btn btn-secondary">
+      &larr; Executive Dashboard
+    </a>
+  </div>
+
+  <!-- Analytical Disclaimer Notice -->
+  <div
+    style="background: rgba(56, 189, 248, 0.06); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: var(--radius-md); padding: 1rem 1.25rem; margin-bottom: 2rem; font-size: 0.88rem; color: #bae6fd;">
+    ℹ️ <strong>Analytical Prototype Feature:</strong> This module detects statistical frequency anomalies over
+    configurable rolling observation windows. It does not predict real-world natural disasters or structural failures.
+  </div>
+
+  <!-- Emerging Issues Cards -->
+  <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+    {% for item in emerging %}
+    <div class="civic-card" style="border-left: 4px solid #f43f5e; background: rgba(17, 24, 39, 0.85);">
+      <div
+        style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 1rem; margin-bottom: 1rem;">
+        <div>
+          <div style="display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.35rem;">
+            <span style="font-size: 1.3rem;">🚨</span>
+            <h3 style="font-size: 1.25rem; font-weight: 700; color: #f8fafc; margin: 0;">
+              {{ item.category }} Alert
+            </h3>
+            <span class="badge" style="background: rgba(244, 63, 94, 0.15); color: #fda4af;">
+              +{{ item.percentageIncrease }}% SURGE
+            </span>
+          </div>
+          <div style="font-size: 0.85rem; color: #38bdf8;">
+            Responsible Department: <strong>{{ item.department }}</strong>
+          </div>
+        </div>
+
+        <div
+          style="text-align: right; background: rgba(0,0,0,0.3); padding: 8px 14px; border-radius: 8px; border: 1px solid var(--border-subtle);">
+          <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Rolling Comparison</div>
+          <div style="font-size: 1rem; font-weight: 700; color: #f8fafc; margin-top: 2px;">
+            <span style="color: #94a3b8;">{{ item.previousCount }}</span> &rarr; <span
+              style="color: #f43f5e; font-size: 1.2rem;">{{ item.currentCount }}</span> complaints
+          </div>
+        </div>
+      </div>
+
+      <p
+        style="font-size: 0.95rem; color: #fde68a; background: rgba(245, 158, 11, 0.08); padding: 0.75rem 1rem; border-radius: 6px; margin-bottom: 1rem; line-height: 1.5;">
+        "{{ item.alertMessage }}"
+      </p>
+
+      <div
+        style="background: rgba(255, 255, 255, 0.02); padding: 0.85rem 1rem; border-radius: 6px; font-size: 0.88rem; color: #cbd5e1; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.75rem;">
+        <div>
+          🛠️ <strong>Recommended Action:</strong> {{ item.recommendation }}
+        </div>
+        <a href="{{ url_for('admin_complaints', category=item.category) }}" class="btn btn-primary btn-sm"
+          style="font-size: 0.78rem;">
+          Inspect {{ item.category }} Complaints &rarr;
+        </a>
+      </div>
+
+    </div>
+    {% endfor %}
+  </div>
+
+</div>
+{% endblock %}

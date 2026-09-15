@@ -1,0 +1,178 @@
+{% extends "base.html" %}
+
+{% block title %}Submit Citizen Complaint – CivicRoute AI{% endblock %}
+
+{% block content %}
+<div style="max-width: 860px; margin: 0 auto;">
+
+  <div style="margin-bottom: 2rem;">
+    <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom: 0.5rem;">
+      <span class="badge" style="background:rgba(6, 182, 212, 0.15); color:var(--accent-cyan);">STEP 1 OF 2</span>
+      <span style="font-size:0.85rem; color:var(--text-muted);">&bull; Triage & Location Acquisition</span>
+    </div>
+    <h1 style="font-size: 2rem; font-weight: 800; letter-spacing: -0.02em;">Register Public Grievance</h1>
+    <p style="color: var(--text-secondary); font-size: 0.95rem;">
+      Describe the issue in plain language. Our AI engine will inspect single or multiple civic concerns, predict the correct department, evaluate priority, and check for nearby duplicates.
+    </p>
+  </div>
+
+  <div class="civic-card">
+    <form id="complaintForm">
+      
+      <!-- Complaint Description -->
+      <div class="form-group">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
+          <label class="form-label" for="description" style="margin-bottom:0;">
+            Complaint Description <span class="req">*</span>
+          </label>
+          <span style="font-size: 0.78rem; color: var(--text-muted);">Plain text &bull; Multi-issue supported</span>
+        </div>
+        <textarea id="description" name="description" class="form-textarea" rows="4" 
+          placeholder="Example: The main road has severe potholes near the school bus stand, and the street lights have been broken for 4 days creating dark and unsafe conditions..." required></textarea>
+        
+        <!-- Pre-fill quick samples for demo convenience -->
+        <div style="margin-top: 0.5rem; display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center;">
+          <span style="font-size: 0.75rem; color: var(--text-muted);">Quick Sample Templates:</span>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="setSample('multi')" style="font-size:0.75rem; padding: 2px 8px;">
+            ⚡ Multi-Issue (Road + Streetlights)
+          </button>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="setSample('water')" style="font-size:0.75rem; padding: 2px 8px;">
+            💧 Water Pipeline Burst (Triggers Duplicate)
+          </button>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="setSample('sanitation')" style="font-size:0.75rem; padding: 2px 8px;">
+            🗑️ Waste Overflow
+          </button>
+        </div>
+      </div>
+
+      <!-- Location Section -->
+      <div style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 1.25rem; margin-bottom: 1.5rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+          <div>
+            <h4 style="font-size: 0.95rem; font-weight: 700; color: var(--text-primary);">📍 Incident Location & Proximity</h4>
+            <div style="font-size: 0.8rem; color: var(--text-muted);">Accurate coordinates allow duplicate prevention and municipal crew routing.</div>
+          </div>
+          <button type="button" id="useGpsBtn" class="btn btn-secondary btn-sm" style="border-color: rgba(56, 189, 248, 0.4); color: #38bdf8;">
+            📡 Use Device GPS
+          </button>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+          <div class="form-group" style="margin-bottom:0;">
+            <label class="form-label" for="locationText">Street / Landmark / Ward</label>
+            <input type="text" id="locationText" name="locationText" class="form-input" value="{{ user.defaultLocation or 'Ward 4, Anna Nagar' }}" required>
+          </div>
+
+          <div class="form-group" style="margin-bottom:0;">
+            <label class="form-label" for="locationPreset">City Ward Presets</label>
+            <select id="locationPreset" class="form-select">
+              <option value="">Choose Quick Area...</option>
+              <option value="13.0861|80.2110|4th Cross Street, Sector 2, Anna Nagar">Ward 4 (4th Cross St - Water Hotspot)</option>
+              <option value="13.0852|80.2104|Anna Salai Junction, Ward 4">Ward 4 (Anna Salai Junction - Roads)</option>
+              <option value="13.0875|80.2130|Block C Market Square, Anna Nagar">Ward 4 (Market Square - Sanitation)</option>
+              <option value="13.0820|80.2075|Central Transit Terminal">Central Bus Terminal (Transport)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Coordinates (Latitude / Longitude) -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+          <div class="form-group" style="margin-bottom:0;">
+            <label class="form-label" for="latitude" style="font-size:0.8rem;">Latitude (&deg;N)</label>
+            <input type="number" step="0.0001" id="latitude" name="latitude" class="form-input" value="{{ user.latitude or default_lat }}">
+          </div>
+          <div class="form-group" style="margin-bottom:0;">
+            <label class="form-label" for="longitude" style="font-size:0.8rem;">Longitude (&deg;E)</label>
+            <input type="number" step="0.0001" id="longitude" name="longitude" class="form-input" value="{{ user.longitude or default_lon }}">
+          </div>
+        </div>
+
+        <!-- Map Picker Preview Area -->
+        <div style="margin-top: 1rem; background: #0b0f19; border: 1px dashed rgba(255, 255, 255, 0.15); border-radius: 8px; padding: 1rem; text-align: center; color: var(--text-muted); font-size: 0.85rem;">
+          🗺️ <strong>Google Maps Picker Simulation:</strong> Coordinates linked to municipal GIS grid (Phase 10 connects dynamic Google Maps Platform JavaScript SDK).
+        </div>
+      </div>
+
+      <!-- Photo / Evidence Upload -->
+      <div class="form-group">
+        <label class="form-label" for="evidenceFile">Supporting Photo / Evidence (Optional)</label>
+        <input type="file" id="evidenceFile" accept="image/*" class="form-input" style="padding: 0.5rem;">
+        <div class="form-help">Upload on-site photograph. AI checks and routes with supporting context.</div>
+        
+        <div style="margin-top: 0.75rem;">
+          <img id="evidencePreview" src="https://images.unsplash.com/photo-1515162816999-a0c47dc192f7?w=600&auto=format&fit=crop&q=80" 
+            alt="Evidence preview" style="max-height: 180px; border-radius: 8px; border: 1px solid var(--border-subtle); display: block;">
+        </div>
+      </div>
+
+      <!-- Submission Actions -->
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--border-subtle);">
+        <a href="{{ url_for('index') }}" class="btn btn-secondary">Cancel</a>
+        <button type="submit" id="analyzeBtn" class="btn btn-primary btn-lg">
+          Analyze & Proceed to Confirmation &rarr;
+        </button>
+      </div>
+
+    </form>
+  </div>
+</div>
+
+<!-- Duplicate / Similar Complaints Modal -->
+<div id="duplicateModal" class="modal-overlay">
+  <div class="modal-content" style="max-width: 650px;">
+    <div class="modal-header">
+      <div style="display: flex; align-items: center; gap: 0.6rem;">
+        <span style="font-size: 1.4rem;">⚠️</span>
+        <div>
+          <h3 style="font-size: 1.15rem; font-weight: 700; color: #fde68a;">Similar Existing Complaints Found</h3>
+          <div style="font-size: 0.8rem; color: var(--text-muted);">Proximity algorithm detected matching reports in this vicinity</div>
+        </div>
+      </div>
+      <button class="btn btn-secondary btn-sm" onclick="closeModal('duplicateModal')">&times;</button>
+    </div>
+
+    <div class="modal-body">
+      <div style="background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); padding: 12px; border-radius: 8px; margin-bottom: 1rem; font-size: 0.88rem; color: #fde68a;">
+        We found <strong><span id="duplicateCount">1</span> active complaint(s)</strong> near your selected location reporting similar issues. Joining an existing issue strengthens its priority without cluttering municipal queues.
+      </div>
+
+      <div id="duplicateList" style="max-height: 240px; overflow-y: auto; margin-bottom: 1.25rem;">
+        <!-- Filled dynamically by submit.js -->
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+        <button id="joinIssueBtn" class="btn btn-primary" style="background: linear-gradient(135deg, #059669, #10b981); width: 100%;">
+          👍 Join Existing Issue (Recommended)
+        </button>
+        <button id="createNewBtn" class="btn btn-secondary" style="width: 100%;">
+          ➕ Create New Separate Complaint
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/submit.js') }}"></script>
+<script>
+  function setSample(type) {
+    const desc = document.getElementById('description');
+    const locPreset = document.getElementById('locationPreset');
+
+    if (type === 'multi') {
+      desc.value = "The main road is damaged with deep potholes causing motorcycle skidding, and 4 street lights have been broken for days making it pitch black and dangerous at night.";
+      locPreset.value = "13.0852|80.2104|Anna Salai Junction, Ward 4";
+    } else if (type === 'water') {
+      desc.value = "Underground drinking water pipeline fractured on 4th Cross St. Fresh water overflowing on the road and zero tap pressure.";
+      locPreset.value = "13.0861|80.2110|4th Cross Street, Sector 2, Anna Nagar";
+    } else if (type === 'sanitation') {
+      desc.value = "Community garbage bins overflowing near the market square for 4 days. Bad stench and dogs scattering waste everywhere.";
+      locPreset.value = "13.0875|80.2130|Block C Market Square, Anna Nagar";
+    }
+    locPreset.dispatchEvent(new Event('change'));
+    showToast('Demo sample loaded into form.', 'info');
+  }
+</script>
+{% endblock %}

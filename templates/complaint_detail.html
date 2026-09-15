@@ -1,0 +1,276 @@
+{% extends "base.html" %}
+
+{% block title %}Complaint {{ ticket.complaintId }} – CivicRoute GOV-21{% endblock %}
+
+{% block content %}
+<div style="max-width: 900px; margin: 0 auto;">
+
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+    <a href="{{ url_for('my_complaints') if user_role == 'citizen' else url_for('admin_dashboard') }}" class="btn btn-secondary btn-sm">
+      &larr; Back to Complaints
+    </a>
+    {% if user_role == 'admin' and admin_profile and ticket.department == admin_profile.department and ticket.status != 'RESOLVED' %}
+      <button class="btn btn-primary btn-sm" onclick="openActionModal('{{ ticket.complaintId }}', '{{ ticket.status }}', '{{ ticket.citizenName }}', '{{ ticket.priority }}')">
+        ⚙️ Process / Resolve Ticket
+      </button>
+    {% endif %}
+  </div>
+
+  <div class="civic-card">
+    
+    <!-- Ticket Header (Section 6) -->
+    <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 1rem; padding-bottom: 1.25rem; border-bottom: 1px solid var(--border-subtle); margin-bottom: 1.5rem;">
+      <div>
+        <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+          <h1 style="font-family: var(--font-mono); font-size: 1.7rem; font-weight: 800; color: #38bdf8; margin: 0;">
+            {{ ticket.complaintId }}
+          </h1>
+          <span class="badge status-{{ ticket.status.replace(' ', '_') }}">{{ ticket.status }}</span>
+          <span class="badge priority-{{ ticket.priority }}">
+            <span class="badge-dot"></span>
+            {{ ticket.priority }} Priority
+          </span>
+          {% if ticket.escalationStatus == 'ESCALATED' or ticket.isOverdue %}
+            <span class="escalation-badge">
+              ⚠ SLA EXCEEDED – ESCALATED
+            </span>
+          {% endif %}
+        </div>
+        <div style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.35rem;">
+          Citizen: <strong>{{ ticket.citizenName }}</strong> ({{ ticket.citizenEmail }}) &bull; Date Added: <strong>{{ ticket.dateAdded }}</strong>
+        </div>
+      </div>
+
+      <div style="text-align: right;">
+        <div style="font-size: 1.05rem; font-weight: 800; color: #f8fafc;">
+          🏛️ {{ ticket.department }}
+        </div>
+        <div style="font-size: 0.82rem; color: #38bdf8;">
+          Category: <strong>{{ ticket.category }}</strong>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLA Alert Banner if Overdue -->
+    {% if ticket.isOverdue and ticket.status != 'RESOLVED' %}
+      <div style="background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.35); border-radius: 8px; padding: 0.9rem 1.25rem; margin-bottom: 1.5rem; color: #fca5a5; display:flex; align-items:center; gap:0.75rem;">
+        <span style="font-size: 1.5rem;">🚨</span>
+        <div>
+          <strong style="color: #fee2e2;">⚠ SLA EXCEEDED – Automatic Escalation Active:</strong>
+          <div style="font-size: 0.88rem; margin-top: 0.2rem;">{{ ticket.escalationNotice }}</div>
+          <div style="font-size: 0.78rem; color: #fecaca; margin-top: 0.2rem;">
+            Escalation Date: {{ ticket.escalatedDate or ticket.slaDeadline }} &bull; Assigned Supervisor: Department Senior Officer / District Grievance Officer
+          </div>
+        </div>
+      </div>
+    {% endif %}
+
+    <!-- Citizen Complaint Tracking Timeline (Section 12) -->
+    <div style="margin: 2rem 0; background: rgba(255, 255, 255, 0.02); padding: 1.5rem; border-radius: 10px; border: 1px solid var(--border-subtle);">
+      <div style="font-size: 0.78rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; margin-bottom: 1rem;">
+        Lifecycle Tracking Timeline (SLA Deadline: {{ ticket.slaDeadline }})
+      </div>
+
+      {% set stages = ['SUBMITTED', 'ASSIGNED', 'IN PROGRESS', 'RESOLVED'] %}
+      {% set current_idx = stages.index(ticket.status) if ticket.status in stages else 0 %}
+      
+      <div class="timeline">
+        <div class="timeline-step {% if current_idx >= 0 %}completed{% endif %}">
+          <div class="timeline-icon">✓</div>
+          <div class="timeline-label">Complaint Submitted<br><small>{{ ticket.dateAdded }}</small></div>
+        </div>
+
+        <div class="timeline-step {% if current_idx >= 1 %}completed{% elif current_idx == 0 and not ticket.isOverdue %}active{% endif %}">
+          <div class="timeline-icon">{% if current_idx >= 1 %}✓{% else %}2{% endif %}</div>
+          <div class="timeline-label">Department Assigned<br><small>{{ ticket.department.split('–')[0] }}</small></div>
+        </div>
+
+        <div class="timeline-step {% if current_idx >= 2 %}completed{% elif current_idx == 1 %}active{% endif %}">
+          <div class="timeline-icon">{% if current_idx >= 2 %}✓{% else %}3{% endif %}</div>
+          <div class="timeline-label">In Progress<br><small>Crew Dispatched</small></div>
+        </div>
+
+        <div class="timeline-step {% if current_idx >= 3 %}completed{% elif current_idx == 2 %}active{% endif %}">
+          <div class="timeline-icon">{% if current_idx >= 3 %}✓{% else %}4{% endif %}</div>
+          <div class="timeline-label">Resolved<br><small>{% if ticket.resolvedDate %}{{ ticket.resolvedDate }}{% else %}SLA: {{ ticket.slaDeadline }}{% endif %}</small></div>
+        </div>
+      </div>
+
+      <!-- If Escalated Timeline Branch (Section 12) -->
+      {% if ticket.escalationStatus == 'ESCALATED' or ticket.isOverdue %}
+        <div style="margin-top: 1.25rem; padding: 0.75rem 1rem; background: rgba(239, 68, 68, 0.08); border-radius: 8px; border: 1px dashed rgba(239, 68, 68, 0.4); display: flex; align-items: center; gap: 0.75rem;">
+          <span style="font-size: 1.2rem;">🚨</span>
+          <div style="font-size: 0.85rem; color: #fca5a5;">
+            <strong>SLA Escalation Pathway Triggered:</strong> 
+            ⚠ SLA Exceeded &rarr; Escalated to Higher Officer ({{ ticket.escalatedTo or 'Department Senior Officer' }}) on {{ ticket.escalatedDate or ticket.slaDeadline }}.
+          </div>
+        </div>
+      {% endif %}
+    </div>
+
+    <!-- Complaint Narrative -->
+    <div style="margin-bottom: 1.5rem; background: rgba(255, 255, 255, 0.02); padding: 1.25rem; border-radius: 8px; border: 1px solid var(--border-subtle);">
+      <div style="font-size: 0.78rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; margin-bottom: 0.4rem;">Grievance Narrative</div>
+      <p style="font-size: 1.05rem; line-height: 1.6; color: var(--text-primary); margin: 0;">
+        "{{ ticket.description }}"
+      </p>
+    </div>
+
+    <!-- Photographic Resolution Evidence (Section 10 & 11) -->
+    {% if ticket.status == 'RESOLVED' and ticket.resolutionNote %}
+      <div style="background: rgba(16, 185, 129, 0.08); border: 2px solid rgba(52, 211, 153, 0.3); border-radius: 10px; padding: 1.5rem; margin-bottom: 1.5rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+          <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <span style="font-size: 1.4rem;">✅</span>
+            <h3 style="font-size: 1.15rem; font-weight: 800; color: #6ee7b7; margin: 0;">
+              Official Resolution Completed
+            </h3>
+          </div>
+          <span style="font-size: 0.8rem; color: var(--text-muted);">
+            Resolved on: <strong>{{ ticket.resolvedDate }}</strong> by <strong>{{ ticket.resolvedBy }}</strong>
+          </div>
+        </div>
+
+        <div style="font-size: 0.95rem; color: #e2e8f0; line-height: 1.6; margin-bottom: 1rem; background: rgba(0,0,0,0.2); padding: 0.85rem 1rem; border-radius: 6px;">
+          <strong>Resolution Note:</strong> "{{ ticket.resolutionNote }}"
+        </div>
+
+        {% if ticket.resolutionPhoto %}
+          <div>
+            <div style="font-size: 0.78rem; text-transform: uppercase; color: #6ee7b7; font-weight: 700; margin-bottom: 0.5rem;">
+              📷 Photographic Work Completion Evidence:
+            </div>
+            <img src="{{ ticket.resolutionPhoto }}" alt="Resolution Evidence" 
+              style="max-height: 240px; border-radius: 8px; border: 1px solid rgba(52, 211, 153, 0.4); display: block;">
+            <div class="form-help" style="color: #94a3b8; margin-top: 0.35rem;">
+              Photo provided by {{ ticket.department }} field crew upon work completion.
+            </div>
+          </div>
+        {% endif %}
+      </div>
+    {% endif %}
+
+    <!-- Triage Details & Location Telemetry -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.25rem; padding-top: 1.25rem; border-top: 1px solid var(--border-subtle);">
+      <div>
+        <div style="font-size: 0.78rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; margin-bottom: 0.4rem;">Location Telemetry</div>
+        <div style="font-size: 0.92rem; color: var(--text-primary);">📍 {{ ticket.location }}</div>
+        <div style="font-size: 0.82rem; color: var(--text-secondary); font-family: monospace; margin-top: 0.25rem;">
+          Lat: {{ ticket.latitude }} &bull; Lon: {{ ticket.longitude }}
+        </div>
+      </div>
+
+      {% if ticket.evidenceUrl %}
+        <div>
+          <div style="font-size: 0.78rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; margin-bottom: 0.4rem;">Citizen Uploaded Photo</div>
+          <a href="{{ ticket.evidenceUrl }}" target="_blank">
+            <img src="{{ ticket.evidenceUrl }}" alt="Citizen Evidence" style="max-height: 120px; border-radius: 6px; border: 1px solid var(--border-subtle);">
+          </a>
+        </div>
+      {% endif %}
+    </div>
+
+  </div>
+</div>
+
+<!-- Modal for Admin Updating / Resolving -->
+<div id="actionModal" class="modal-overlay">
+  <div class="modal-content" style="max-width: 600px;">
+    <div class="modal-header">
+      <h3 id="modalActionTitle" style="font-size: 1.15rem; font-weight: 700;">Process Ticket: {{ ticket.complaintId }}</h3>
+      <button class="btn btn-secondary btn-sm" onclick="closeModal('actionModal')">&times;</button>
+    </div>
+    <form id="deptActionForm">
+      <div class="modal-body">
+        <input type="hidden" id="modalTicketId" value="{{ ticket.complaintId }}">
+
+        <div class="form-group">
+          <label class="form-label" for="modalStatusSelect">Lifecycle Status</label>
+          <select id="modalStatusSelect" class="form-select" onchange="toggleResolutionFields(this.value)">
+            <option value="ASSIGNED" {% if ticket.status == 'ASSIGNED' %}selected{% endif %}>ASSIGNED – Crew Dispatched</option>
+            <option value="IN PROGRESS" {% if ticket.status == 'IN PROGRESS' %}selected{% endif %}>IN PROGRESS – Work Underway</option>
+            <option value="RESOLVED">RESOLVED – Grievance Rectified</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="modalResolutionNotes">
+            Resolution Note <span id="noteReq" class="req" style="display:none;">*</span>
+          </label>
+          <textarea id="modalResolutionNotes" class="form-textarea" rows="3" placeholder="Enter progress notes or mandatory resolution description..."></textarea>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="modalResolutionPhoto">
+            Resolution Photo Evidence URL
+          </label>
+          <input type="url" id="modalResolutionPhoto" class="form-input" 
+            placeholder="https://..." value="https://images.unsplash.com/photo-1515162816999-a0c47dc192f7?w=600&auto=format&fit=crop&q=80">
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('actionModal')">Cancel</button>
+        <button type="submit" id="saveActionBtn" class="btn btn-primary">Commit Department Update</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  function openActionModal() {
+    toggleResolutionFields(document.getElementById('modalStatusSelect').value);
+    openModal('actionModal');
+  }
+
+  function toggleResolutionFields(status) {
+    const noteReq = document.getElementById('noteReq');
+    const notesInput = document.getElementById('modalResolutionNotes');
+    if (status === 'RESOLVED') {
+      noteReq.style.display = 'inline';
+      notesInput.required = true;
+    } else {
+      noteReq.style.display = 'none';
+      notesInput.required = false;
+    }
+  }
+
+  document.getElementById('deptActionForm')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const ticketId = document.getElementById('modalTicketId').value;
+    const newStatus = document.getElementById('modalStatusSelect').value;
+    const notes = document.getElementById('modalResolutionNotes').value.trim();
+    const photo = document.getElementById('modalResolutionPhoto').value.trim();
+    const btn = document.getElementById('saveActionBtn');
+
+    if (newStatus === 'RESOLVED' && !notes) {
+      showToast('A Resolution Note is mandatory before resolving a complaint.', 'error');
+      return;
+    }
+
+    btn.disabled = true;
+    btn.innerHTML = 'Committing...';
+
+    try {
+      const res = await fetch(`/api/admin/complaints/${ticketId}/status`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus, notes: notes, resolutionPhoto: photo })
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) throw new Error(data.error || 'Failed to update status');
+
+      showToast(`Complaint ${ticketId} updated successfully`, 'success');
+      closeModal('actionModal');
+      setTimeout(() => location.reload(), 600);
+    } catch (err) {
+      showToast(err.message, 'error');
+      btn.disabled = false;
+      btn.innerHTML = 'Commit Department Update';
+    }
+  });
+</script>
+{% endblock %}

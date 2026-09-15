@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+
+{% block title %}Government Department Officer Login – GOV-21{% endblock %}
+
+{% block content %}
+<div style="max-width: 580px; margin: 2.5rem auto;">
+  <div class="civic-card" style="padding: 2.5rem 2rem; border-top: 4px solid #3b82f6;">
+    
+    <div style="text-align: center; margin-bottom: 2rem;">
+      <div style="width: 56px; height: 56px; background: linear-gradient(135deg, #1e40af, #3b82f6); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; margin: 0 auto 1rem; color: white; box-shadow: 0 0 20px rgba(59, 130, 246, 0.4);">
+        🏛️
+      </div>
+      <span class="badge" style="background: rgba(59, 130, 246, 0.15); color: #93c5fd; letter-spacing: 0.08em; font-weight: 800;">
+        OFFICIAL GOVERNMENT PORTAL &bull; GOV-21
+      </span>
+      <h2 style="font-size: 1.7rem; font-weight: 800; margin: 0.75rem 0 0.4rem; letter-spacing: -0.02em;">
+        Departmental Admin Access
+      </h2>
+      <p style="color: var(--text-secondary); font-size: 0.88rem;">
+        Restricted to verified municipal and departmental officers with official government credentials.
+      </p>
+    </div>
+
+    <!-- Prototype Disclaimer -->
+    <div style="background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.25); border-radius: 8px; padding: 0.8rem 1rem; margin-bottom: 1.75rem; font-size: 0.82rem; color: #fde68a;">
+      ℹ️ <strong>Prototype Demonstration Notice:</strong> This prototype validates email domain format (@gov.in) and simulates role-based authorization. It does not claim to verify whether an email address is genuinely owned by the Government of India or Tamil Nadu.
+    </div>
+
+    <!-- Admin Login Form -->
+    <form id="adminLoginForm">
+      <div class="form-group">
+        <label class="form-label" for="adminEmail">
+          Government Officer Email Address <span class="req">*</span>
+        </label>
+        <div style="position: relative;">
+          <input type="email" id="adminEmail" name="email" class="form-input" 
+            placeholder="e.g. pwd.admin@gov.in" required style="padding-right: 80px;">
+          <span style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); font-size: 0.8rem; font-weight: 700; color: #38bdf8; background: rgba(56, 189, 248, 0.1); padding: 2px 6px; border-radius: 4px;">
+            @gov.in
+          </span>
+        </div>
+        <div class="form-help">Must end with official government domain <strong>@gov.in</strong></div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="adminPassword">Officer Password / Demo Key</label>
+        <input type="password" id="adminPassword" class="form-input" value="GovAdmin@2026" placeholder="Enter secure key">
+        <div class="form-help">Pre-filled with prototype authentication credential.</div>
+      </div>
+
+      <button type="submit" id="adminLoginBtn" class="btn btn-primary btn-lg" style="width: 100%; margin-top: 1rem;">
+        Authenticate as Department Admin &rarr;
+      </button>
+    </form>
+
+    <!-- Predefined Approved Demo Accounts Selector -->
+    <div style="margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--border-subtle);">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+        <span style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">
+          Predefined Demo Accounts (1-Click Login)
+        </span>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 0.6rem; max-height: 250px; overflow-y: auto; padding-right: 4px;">
+        {% for email, meta in admin_dept_mapping.items() %}
+          <button type="button" onclick="quickLogin('{{ email }}')" class="btn btn-secondary btn-sm" 
+            style="justify-content: space-between; text-align: left; padding: 0.6rem 0.85rem; font-size: 0.82rem; background: rgba(255, 255, 255, 0.02);">
+            <div>
+              <strong style="color: #f8fafc;">{{ meta.shortDept }}</strong>
+              <div style="font-family: var(--font-mono); font-size: 0.75rem; color: #38bdf8;">{{ email }}</div>
+            </div>
+            <span style="font-size: 0.75rem; color: var(--text-muted);">&rarr;</span>
+          </button>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div style="text-align: center; margin-top: 1.5rem; font-size: 0.85rem;">
+      <span style="color: var(--text-muted);">Not an administrator?</span>
+      <a href="{{ url_for('login_page') }}" style="color: #38bdf8; font-weight: 600; margin-left: 0.25rem;">
+        Go to Citizen Login
+      </a>
+    </div>
+
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  async function performAdminLogin(email) {
+    const btn = document.getElementById('adminLoginBtn');
+    btn.disabled = true;
+    btn.innerHTML = 'Validating Government Credentials...';
+
+    try {
+      const res = await fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email, role: 'admin' })
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Authentication failed');
+      }
+
+      showToast(`Welcome! Authenticated as Department Admin`, 'success');
+      setTimeout(() => {
+        window.location.href = data.redirect;
+      }, 500);
+    } catch (err) {
+      showToast(err.message, 'error');
+      btn.disabled = false;
+      btn.innerHTML = 'Authenticate as Department Admin &rarr;';
+    }
+  }
+
+  document.getElementById('adminLoginForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const email = document.getElementById('adminEmail').value.trim();
+    performAdminLogin(email);
+  });
+
+  function quickLogin(email) {
+    document.getElementById('adminEmail').value = email;
+    performAdminLogin(email);
+  }
+</script>
+{% endblock %}

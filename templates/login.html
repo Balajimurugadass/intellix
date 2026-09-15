@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+
+{% block title %}Citizen Sign In – CivicRoute AI{% endblock %}
+
+{% block content %}
+<div style="max-width: 520px; margin: 3rem auto;">
+  <div class="civic-card" style="padding: 2.5rem 2rem; text-align: center;">
+    
+    <div class="brand-icon" style="margin: 0 auto 1.25rem; width: 50px; height: 50px; font-size: 1.5rem;">⚡</div>
+    
+    <h2 style="font-size: 1.6rem; font-weight: 800; margin-bottom: 0.5rem; letter-spacing: -0.02em;">Citizen Grievance Portal</h2>
+    <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 2rem;">
+      Sign in with your personal email account to file grievances and track municipal resolution in real-time.
+    </p>
+
+    <!-- Google Sign In Button for Citizens -->
+    <div style="margin-bottom: 1.5rem;">
+      <button id="googleSignInBtn" class="btn btn-secondary" style="width: 100%; padding: 0.85rem; font-size: 0.95rem; background: #ffffff; color: #1f2937; border: 1px solid #d1d5db; display: flex; align-items: center; justify-content: center; gap: 0.75rem; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+        <svg width="20" height="20" viewBox="0 0 24 24">
+          <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.8-2.4 3.65v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.14z"/>
+          <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.24v3.15C3.26 21.36 7.34 24 12 24z"/>
+          <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.24C.45 8.14 0 9.99 0 12s.45 3.86 1.24 5.42l4.04-3.15z"/>
+          <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.34 0 3.26 2.64 1.24 6.58l4.04 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/>
+        </svg>
+        <span style="font-weight: 600;">Sign in with Google (Citizen)</span>
+      </button>
+      <div class="form-help" style="margin-top: 0.75rem;">
+        Citizens use @gmail.com or standard email accounts.
+      </div>
+    </div>
+
+    <!-- Quick Citizen Persona Login -->
+    <div style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 1rem; text-align: left; margin-bottom: 2rem;">
+      <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase; margin-bottom: 0.5rem;">
+        Demo Citizen Account
+      </div>
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+          <div style="font-weight: 700; color: #f8fafc; font-size: 0.9rem;">Demo Citizen</div>
+          <div style="font-size: 0.8rem; color: var(--text-secondary); font-family: monospace;">citizen@example.com</div>
+        </div>
+        <button onclick="loginAsCitizen('citizen@example.com')" class="btn btn-primary btn-sm">
+          Login as Citizen &rarr;
+        </button>
+      </div>
+    </div>
+
+    <div style="position: relative; margin: 2rem 0; text-align: center;">
+      <hr style="border: none; border-top: 1px solid var(--border-subtle);">
+      <span style="position: absolute; top: -11px; left: 50%; transform: translateX(-50%); background: #111827; padding: 0 10px; font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">
+        Government Officer?
+      </span>
+    </div>
+
+    <!-- Switch to Official Government Admin Login -->
+    <a href="{{ url_for('admin_login_page') }}" class="btn btn-secondary" style="width: 100%; border-color: rgba(59, 130, 246, 0.4); color: #93c5fd; padding: 0.75rem;">
+      <span>🏛️ Go to Official @gov.in Admin Portal &rarr;</span>
+    </a>
+
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  async function loginAsCitizen(email) {
+    try {
+      const res = await fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email, role: 'citizen' })
+      });
+      const data = await res.json();
+      if (data.success && data.redirect) {
+        showToast('Signed in successfully as Citizen', 'success');
+        setTimeout(() => window.location.href = data.redirect, 500);
+      }
+    } catch (err) {
+      showToast('Login simulation failed', 'error');
+    }
+  }
+
+  document.getElementById('googleSignInBtn').addEventListener('click', () => {
+    loginAsCitizen('citizen@example.com');
+  });
+</script>
+{% endblock %}

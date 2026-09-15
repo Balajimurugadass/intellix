@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+
+{% block title %}My Complaints – CivicRoute GOV-21{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 2rem;">
+  
+  <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 1rem; margin-bottom: 1.5rem;">
+    <div>
+      <h1 style="font-size: 2rem; font-weight: 800; letter-spacing: -0.02em;">My Registered Grievances</h1>
+      <p style="color: var(--text-secondary); font-size: 0.95rem;">
+        Track SLA deadlines, departmental assignments, and photographic resolution evidence.
+      </p>
+    </div>
+    <a href="{{ url_for('submit_complaint') }}" class="btn btn-primary">
+      ✍️ File New Grievance
+    </a>
+  </div>
+
+  <!-- Filter & Search Controls -->
+  <div class="civic-card" style="padding: 1rem 1.25rem; margin-bottom: 1.5rem;">
+    <form method="GET" action="{{ url_for('my_complaints') }}" style="display: flex; flex-wrap: wrap; gap: 1rem; align-items: center;">
+      <div style="flex: 1; min-width: 250px;">
+        <input type="text" name="q" class="form-input" placeholder="Search by Complaint ID (e.g. GOV-10482), category, or keyword..." value="{{ search_query }}">
+      </div>
+
+      <div style="display: flex; gap: 0.5rem; align-items: center;">
+        <label style="font-size: 0.85rem; color: var(--text-secondary); font-weight: 600;">Status:</label>
+        <select name="status" class="form-select" onchange="this.form.submit()" style="width: auto;">
+          <option value="All" {% if selected_status == 'All' %}selected{% endif %}>All Statuses</option>
+          {% for st in ticket_statuses %}
+            <option value="{{ st }}" {% if selected_status == st %}selected{% endif %}>{{ st }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <button type="submit" class="btn btn-secondary">Filter</button>
+      {% if search_query or selected_status != 'All' %}
+        <a href="{{ url_for('my_complaints') }}" class="btn btn-secondary" style="font-size: 0.8rem;">Clear</a>
+      {% endif %}
+    </form>
+  </div>
+
+  <!-- Tickets Listing Grid (Section 12) -->
+  {% if tickets %}
+    <div style="display: flex; flex-direction: column; gap: 1rem;">
+      {% for ticket in tickets %}
+        <div class="civic-card" style="position: relative; {% if ticket.status == 'RESOLVED' %}border-left: 4px solid #10b981;{% elif ticket.isOverdue %}border-left: 4px solid #f43f5e;{% endif %}">
+          
+          <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 1rem; margin-bottom: 0.75rem;">
+            <div>
+              <div style="display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap;">
+                <span style="font-family: var(--font-mono); font-weight: 800; font-size: 1.1rem; color: #38bdf8;">
+                  {{ ticket.complaintId }}
+                </span>
+                <span class="badge status-{{ ticket.status.replace(' ', '_') }}">
+                  {{ ticket.status }}
+                </span>
+                <span class="badge priority-{{ ticket.priority }}">
+                  <span class="badge-dot"></span>
+                  {{ ticket.priority }} Priority
+                </span>
+                {% if ticket.escalationStatus == 'ESCALATED' or ticket.isOverdue %}
+                  <span class="escalation-badge">
+                    ⚠ SLA EXCEEDED – ESCALATED
+                  </span>
+                {% endif %}
+              </div>
+              <div style="font-size: 0.82rem; color: var(--text-muted); margin-top: 0.35rem;">
+                Date Added: <strong>{{ ticket.dateAdded }}</strong> &bull; 
+                SLA Deadline: <strong style="color:{% if ticket.isOverdue %}#fda4af{% else %}#cbd5e1{% endif %};">{{ ticket.slaDeadline }}</strong>
+                {% if ticket.resolvedDate %}
+                  &bull; Resolved: <strong style="color:#6ee7b7;">{{ ticket.resolvedDate }}</strong>
+                {% endif %}
+              </div>
+            </div>
+
+            <div style="text-align: right;">
+              <div style="font-size: 0.9rem; font-weight: 700; color: #f8fafc;">
+                🏛️ {{ ticket.department }}
+              </div>
+              <div style="font-size: 0.78rem; color: var(--text-muted);">
+                Category: {{ ticket.category }}
+              </div>
+            </div>
+          </div>
+
+          <!-- Escalation Notice Banner -->
+          {% if ticket.isOverdue and ticket.status != 'RESOLVED' %}
+            <div style="background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.35); border-radius: 8px; padding: 0.6rem 1rem; margin: 0.75rem 0; font-size: 0.85rem; color: #fca5a5; display:flex; align-items:center; gap:0.6rem;">
+              <span>🚨</span>
+              <span><strong>SLA Alert:</strong> {{ ticket.escalationNotice }}</span>
+            </div>
+          {% endif %}
+
+          <p style="font-size: 0.95rem; color: var(--text-primary); line-height: 1.5; margin-bottom: 0.75rem;">
+            {{ ticket.description }}
+          </p>
+
+          <!-- Resolved Section with Photo Evidence (Section 10 & 11) -->
+          {% if ticket.status == 'RESOLVED' and ticket.resolutionNote %}
+            <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: 8px; padding: 0.85rem 1.25rem; margin-bottom: 1rem;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
+                <span style="font-size: 0.78rem; font-weight: 800; color: #6ee7b7; text-transform: uppercase;">
+                  ✓ Resolution Verified by Department Officer
+                </span>
+                <span style="font-size: 0.75rem; color: var(--text-muted);">Resolved on {{ ticket.resolvedDate }}</span>
+              </div>
+              <p style="font-size: 0.88rem; color: #e2e8f0; margin: 0 0 0.5rem 0;">
+                "{{ ticket.resolutionNote }}"
+              </p>
+              {% if ticket.resolutionPhoto %}
+                <div style="display: flex; align-items: center; gap: 0.75rem; margin-top: 0.5rem;">
+                  <img src="{{ ticket.resolutionPhoto }}" alt="Resolution Evidence" style="width: 70px; height: 50px; object-fit: cover; border-radius: 6px; border: 1px solid var(--border-subtle);">
+                  <a href="{{ ticket.resolutionPhoto }}" target="_blank" style="font-size: 0.82rem; color: #38bdf8; text-decoration: underline; font-weight: 600;">
+                    📷 View Work Completion Photo Evidence &rarr;
+                  </a>
+                </div>
+              {% endif %}
+            </div>
+          {% endif %}
+
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; padding-top: 0.75rem; border-top: 1px solid rgba(255, 255, 255, 0.05); font-size: 0.85rem; color: var(--text-secondary);">
+            <div>
+              📍 <strong>Location:</strong> {{ ticket.location }}
+            </div>
+
+            <a href="{{ url_for('complaint_detail', ticket_id=ticket.complaintId) }}" class="btn btn-secondary btn-sm">
+              View Tracking Timeline &rarr;
+            </a>
+          </div>
+
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="civic-card" style="text-align: center; padding: 4rem 2rem;">
+      <div style="font-size: 3rem; margin-bottom: 1rem;">📂</div>
+      <h3 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 0.5rem;">No Complaints Found</h3>
+      <p style="color: var(--text-secondary); max-width: 450px; margin: 0 auto 1.5rem;">
+        You have no registered complaints matching the active filter.
+      </p>
+      <a href="{{ url_for('submit_complaint') }}" class="btn btn-primary">Submit a New Grievance</a>
+    </div>
+  {% endif %}
+
+</div>
+{% endblock %}

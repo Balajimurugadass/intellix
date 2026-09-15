@@ -1,0 +1,305 @@
+{% extends "base.html" %}
+
+{% block title %}{{ admin.shortDept }} Complaints Registry – CivicRoute GOV-21{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 2.5rem;">
+
+  <!-- Header Banner -->
+  <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 1rem; margin-bottom: 1.5rem;">
+    <div>
+      <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
+        <span class="badge" style="background: rgba(59, 130, 246, 0.2); color: #93c5fd;">
+          DEPARTMENTAL REPOSITORY
+        </span>
+        <span style="font-size: 0.8rem; color: var(--text-muted);">&bull; {{ admin.email }}</span>
+      </div>
+      <h1 style="font-size: 2rem; font-weight: 800; letter-spacing: -0.02em;">
+        {{ admin.shortDept }} Grievance Registry
+      </h1>
+      <p style="color: var(--text-secondary); font-size: 0.9rem;">
+        Displaying complaints routed strictly to <strong>{{ admin.department }}</strong>.
+      </p>
+    </div>
+
+    <div style="display: flex; gap: 0.5rem;">
+      <a href="{{ url_for('admin_dashboard') }}" class="btn btn-secondary">
+        &larr; Department Dashboard
+      </a>
+      <a href="{{ url_for('admin_hotspots') }}" class="btn btn-secondary">
+        📍 Hotspots
+      </a>
+    </div>
+  </div>
+
+  <!-- Departmental Filter Bar (Section 15) -->
+  <div class="civic-card" style="padding: 1.25rem; margin-bottom: 1.5rem;">
+    <form method="GET" action="{{ url_for('admin_complaints') }}">
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 0.75rem; align-items: flex-end;">
+        
+        <div>
+          <label style="font-size: 0.78rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Search Complaint</label>
+          <input type="text" name="q" class="form-input" placeholder="ID, citizen, keyword..." value="{{ search }}">
+        </div>
+
+        <div>
+          <label style="font-size: 0.78rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Priority</label>
+          <select name="priority" class="form-select">
+            <option value="All">All Priorities</option>
+            {% for p in priority_levels %}
+              <option value="{{ p }}" {% if sel_pri == p %}selected{% endif %}>{{ p }} Priority</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div>
+          <label style="font-size: 0.78rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Status</label>
+          <select name="status" class="form-select">
+            <option value="All">All Statuses</option>
+            {% for st in ticket_statuses %}
+              <option value="{{ st }}" {% if sel_status == st %}selected{% endif %}>{{ st }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div>
+          <label style="font-size: 0.78rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">SLA Health</label>
+          <select name="sla_status" class="form-select">
+            <option value="All">All SLA States</option>
+            <option value="OVERDUE" {% if sel_sla == 'OVERDUE' %}selected{% endif %}>⚠️ Overdue / Escalated</option>
+            <option value="ON_TRACK" {% if sel_sla == 'ON_TRACK' %}selected{% endif %}>✓ On Track / Due Soon</option>
+          </select>
+        </div>
+
+        <div>
+          <label style="font-size: 0.78rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Filter by Date</label>
+          <input type="date" name="date" class="form-input" value="{{ sel_date }}">
+        </div>
+
+        <div style="display: flex; gap: 0.5rem;">
+          <button type="submit" class="btn btn-primary" style="flex: 1;">Filter</button>
+          <a href="{{ url_for('admin_complaints') }}" class="btn btn-secondary">Reset</a>
+        </div>
+
+      </div>
+    </form>
+  </div>
+
+  <!-- Complaints Data Table (Section 6 & 13) -->
+  <div class="civic-card" style="padding: 0; overflow: hidden;">
+    <div class="table-responsive">
+      <table class="civic-table">
+        <thead>
+          <tr>
+            <th>Complaint ID</th>
+            <th>Citizen Details</th>
+            <th>Description & Evidence</th>
+            <th>Priority</th>
+            <th>Date Added</th>
+            <th>SLA Deadline</th>
+            <th>Status</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% if complaints %}
+            {% for c in complaints %}
+              <tr style="{% if c.escalationStatus == 'ESCALATED' or c.isOverdue %}background: rgba(244, 63, 94, 0.04);{% endif %}">
+                <td>
+                  <span style="font-family: var(--font-mono); font-weight: 800; color: #38bdf8;">{{ c.complaintId }}</span>
+                  {% if c.escalationStatus == 'ESCALATED' %}
+                    <span class="escalation-badge" style="display:block; margin-top:3px; font-size:0.65rem;">
+                      ⚠ ESCALATED
+                    </span>
+                  {% endif %}
+                </td>
+                <td>
+                  <div style="font-weight: 700; color: #f8fafc;">{{ c.citizenName }}</div>
+                  <div style="font-size: 0.78rem; color: #94a3b8; font-family: monospace;">{{ c.citizenEmail }}</div>
+                  <div style="font-size: 0.75rem; color: var(--text-muted);">📍 {{ c.location }}</div>
+                </td>
+                <td style="max-width: 260px;">
+                  <div style="font-size: 0.88rem; color: #cbd5e1; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                    {{ c.description }}
+                  </div>
+                  {% if c.evidenceUrl %}
+                    <a href="{{ c.evidenceUrl }}" target="_blank" style="font-size:0.75rem; color:#38bdf8; text-decoration:underline; display:inline-block; margin-top:3px;">
+                      📷 View Photo Evidence
+                    </a>
+                  {% endif %}
+                  {% if c.resolutionNote %}
+                    <div style="font-size: 0.75rem; color: #6ee7b7; margin-top: 3px;">
+                      ✓ Note: {{ c.resolutionNote }}
+                    </div>
+                  {% endif %}
+                </td>
+                <td>
+                  <span class="badge priority-{{ c.priority }}">
+                    <span class="badge-dot"></span>
+                    {{ c.priority }}
+                  </span>
+                  <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 2px;">
+                    SLA: {{ priority_sla_days[c.priority] }}d
+                  </div>
+                </td>
+                <td style="font-size: 0.82rem; color: #cbd5e1; white-space: nowrap;">
+                  {{ c.dateAdded }}
+                </td>
+                <td>
+                  <div style="font-weight: 700; font-size: 0.85rem; color: {% if c.isOverdue %}#fca5a5{% else %}#cbd5e1{% endif %};">
+                    {{ c.slaDeadline }}
+                  </div>
+                  {% if c.isOverdue %}
+                    <div style="font-size: 0.7rem; color: #f43f5e; font-weight: 700; margin-top: 2px;">
+                      ⚠ SLA EXCEEDED
+                    </div>
+                  {% endif %}
+                </td>
+                <td>
+                  <span class="badge status-{{ c.status.replace(' ', '_') }}">{{ c.status }}</span>
+                  {% if c.resolvedDate %}
+                    <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 2px;">
+                      {{ c.resolvedDate }}
+                    </div>
+                  {% endif %}
+                </td>
+                <td>
+                  <div style="display: flex; flex-direction: column; gap: 4px;">
+                    <a href="{{ url_for('complaint_detail', ticket_id=c.complaintId) }}" class="btn btn-secondary btn-sm" style="padding: 2px 8px; font-size: 0.75rem;">
+                      View
+                    </a>
+                    {% if c.status != 'RESOLVED' %}
+                      <button class="btn btn-primary btn-sm" onclick="openActionModal('{{ c.complaintId }}', '{{ c.status }}', '{{ c.citizenName }}', '{{ c.priority }}')" style="padding: 2px 8px; font-size: 0.75rem;">
+                        Process
+                      </button>
+                    {% endif %}
+                  </div>
+                </td>
+              </tr>
+            {% endfor %}
+          {% else %}
+            <tr>
+              <td colspan="8" style="text-align: center; padding: 3rem 1rem; color: var(--text-muted);">
+                No complaints found matching current filters for {{ admin.department }}.
+              </td>
+            </tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<!-- Admin Action Modal -->
+<div id="actionModal" class="modal-overlay">
+  <div class="modal-content" style="max-width: 600px;">
+    <div class="modal-header">
+      <div>
+        <h3 id="modalActionTitle" style="font-size: 1.15rem; font-weight: 700; color: #f8fafc; margin: 0;">Departmental Action</h3>
+        <div id="modalActionSubtitle" style="font-size: 0.8rem; color: var(--text-muted); margin-top: 2px;"></div>
+      </div>
+      <button class="btn btn-secondary btn-sm" onclick="closeModal('actionModal')">&times;</button>
+    </div>
+
+    <form id="deptActionForm">
+      <div class="modal-body">
+        <input type="hidden" id="modalTicketId">
+
+        <div class="form-group">
+          <label class="form-label" for="modalStatusSelect">Lifecycle Status</label>
+          <select id="modalStatusSelect" class="form-select" onchange="toggleResolutionFields(this.value)">
+            <option value="ASSIGNED">ASSIGNED – Crew Dispatched</option>
+            <option value="IN PROGRESS">IN PROGRESS – Work Underway</option>
+            <option value="RESOLVED">RESOLVED – Grievance Rectified</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="modalResolutionNotes">
+            Resolution / Action Note <span id="noteReq" class="req" style="display:none;">*</span>
+          </label>
+          <textarea id="modalResolutionNotes" class="form-textarea" rows="3" placeholder="Enter progress notes or mandatory resolution description..."></textarea>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="modalResolutionPhoto">
+            Resolution Photo Evidence URL
+          </label>
+          <input type="url" id="modalResolutionPhoto" class="form-input" 
+            placeholder="https://..." value="https://images.unsplash.com/photo-1515162816999-a0c47dc192f7?w=600&auto=format&fit=crop&q=80">
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('actionModal')">Cancel</button>
+        <button type="submit" id="saveActionBtn" class="btn btn-primary">Save Update</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  function openActionModal(ticketId, currentStatus, citizenName, priority) {
+    document.getElementById('modalTicketId').value = ticketId;
+    document.getElementById('modalActionTitle').innerText = `Process Ticket: ${ticketId}`;
+    document.getElementById('modalActionSubtitle').innerText = `Citizen: ${citizenName} • Priority: ${priority}`;
+    
+    const statusSelect = document.getElementById('modalStatusSelect');
+    statusSelect.value = (currentStatus === 'SUBMITTED') ? 'ASSIGNED' : currentStatus;
+    
+    toggleResolutionFields(statusSelect.value);
+    openModal('actionModal');
+  }
+
+  function toggleResolutionFields(status) {
+    const noteReq = document.getElementById('noteReq');
+    const notesInput = document.getElementById('modalResolutionNotes');
+    if (status === 'RESOLVED') {
+      noteReq.style.display = 'inline';
+      notesInput.required = true;
+    } else {
+      noteReq.style.display = 'none';
+      notesInput.required = false;
+    }
+  }
+
+  document.getElementById('deptActionForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const ticketId = document.getElementById('modalTicketId').value;
+    const newStatus = document.getElementById('modalStatusSelect').value;
+    const notes = document.getElementById('modalResolutionNotes').value.trim();
+    const photo = document.getElementById('modalResolutionPhoto').value.trim();
+    const btn = document.getElementById('saveActionBtn');
+
+    if (newStatus === 'RESOLVED' && !notes) {
+      showToast('A Resolution Note is mandatory before resolving a complaint.', 'error');
+      return;
+    }
+
+    btn.disabled = true;
+    btn.innerHTML = 'Committing...';
+
+    try {
+      const res = await fetch(`/api/admin/complaints/${ticketId}/status`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus, notes: notes, resolutionPhoto: photo })
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) throw new Error(data.error || 'Failed to update status');
+
+      showToast(`Complaint ${ticketId} updated successfully`, 'success');
+      closeModal('actionModal');
+      setTimeout(() => location.reload(), 600);
+    } catch (err) {
+      showToast(err.message, 'error');
+      btn.disabled = false;
+      btn.innerHTML = 'Save Update';
+    }
+  });
+</script>
+{% endblock %}
